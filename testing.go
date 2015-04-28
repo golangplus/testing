@@ -23,11 +23,10 @@ var (
 	SkippedErr = errors.New("SkippedErr")
 )
 
-// *WriterTB is a type implementing testing.TB interface.
-// It contains a io.Writer which is used as the destination
-// of logging. Skipped and failed status are also stored.
-// FailedErr is thrown when FailNow is called and SkippedErr is
-// called when SkipNow is called.
+// *WriterTB implements the testing.TB interface.
+// An io.Writer can be specified as the destination of logging.
+// Skipped and failed status are also stored.
+// FailedErr is thrown when FailNow is called and SkippedErr for SkipNow.
 //
 // This type is especially useful for writing testcases of tools for testing.
 type WriterTB struct {
