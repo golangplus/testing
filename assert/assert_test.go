@@ -8,12 +8,21 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path"
-	"runtime"
 	"testing"
 
 	"github.com/golangplus/testing"
 )
+
+func TestFilePosition(t *testing.T) {
+	var b bytes.Buffer
+	bt := &testingp.WriterTB{
+		Writer: &b,
+	}
+
+	Equal(bt, "v", 1, 2)
+	line := 22 // the line number of the last line
+	Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", line))
+}
 
 func TestSuccess(t *testing.T) {
 	True(t, "return value", Equal(t, "v", 1, 1))
@@ -46,21 +55,8 @@ func ExampleFailed() {
 	// s is expected to be "2", but got "1"
 }
 
-func nextLine() string {
-	_, file, line, ok := runtime.Caller(1)
-	if !ok {
-		return ""
-	}
-	return fmt.Sprintf("%s:%d", path.Base(file), line+1)
-}
-
-func TestFilePosition(t *testing.T) {
-	var b bytes.Buffer
-	bt := &testingp.WriterTB{
-		Writer: &b,
-	}
-
-	pos := nextLine()
-	Equal(bt, "v", 1, 2)
-	Equal(t, "log", b.String(), fmt.Sprintf("%s: v is expected to be \"2\", but got \"1\"\n", pos))
+func TestPanic(t *testing.T) {
+	True(t, "return value", Panic(t, "panic", func() {
+		panic("error")
+	}))
 }

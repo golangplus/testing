@@ -1,5 +1,5 @@
 # testing
-Plus to the standard testing package
+Plus to the standard `testing` package
 
 Godoc: [testingp](http://godoc.org/github.com/golangplus/testing) [assert](http://godoc.org/github.com/golangplus/testing/assert)
 

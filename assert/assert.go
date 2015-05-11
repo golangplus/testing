@@ -97,3 +97,19 @@ func NoError(t testing.TB, err error) bool {
 	}
 	return true
 }
+
+func Panic(t testing.TB, name string, f func()) bool {
+	if !func() (res bool) {
+		defer func() {
+			res = recover() != nil
+		}()
+
+		f()
+		return
+	}() {
+		t.Errorf("%s%s does not panic as expected.", name)
+		return false
+	}
+
+	return true
+}
