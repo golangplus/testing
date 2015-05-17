@@ -51,6 +51,37 @@ func Equal(t testing.TB, name string, act, exp interface{}) bool {
 	return true
 }
 
+func ValueShould(t testing.TB, name string, act interface{}, expToFunc interface{}, descIfFailed string) bool {
+	expFunc := reflect.ValueOf(expToFunc)
+	if expFunc.Kind() != reflect.Func {
+		t.Errorf("%sassert: expToFunc must be a func", assertPos(0))
+		return false
+	}
+
+	if expFunc.Type().NumIn() != 1 {
+		t.Errorf("%sassert: expToFunc must have one parameter", assertPos(0))
+		return false
+	}
+
+	if expFunc.Type().NumOut() != 1 {
+		t.Errorf("%sassert: expToFunc must have one return value", assertPos(0))
+		return false
+	}
+
+	if expFunc.Type().Out(0).Kind() != reflect.Bool {
+		t.Errorf("%sassert: expToFunc must return a bool", assertPos(0))
+		return false
+	}
+
+	actValue := reflect.ValueOf(act)
+	succ := expFunc.Call([]reflect.Value{actValue})[0].Bool()
+	if !succ {
+		t.Errorf("%s%s %s: %s(type %v)", assertPos(0), name, descIfFailed,
+			strconv.Quote(fmt.Sprint(act)), actValue.Type())
+	}
+	return succ
+}
+
 func NotEqual(t testing.TB, name string, act, exp interface{}) bool {
 	if act == exp {
 		t.Errorf("%s%s is not expected to be %s", assertPos(0), name,
@@ -65,6 +96,13 @@ func True(t testing.TB, name string, act bool) bool {
 		t.Errorf("%s%s unexpectedly got false", assertPos(0), name)
 	}
 	return act
+}
+
+func Should(t testing.TB, vl bool, showIfFailed string) bool {
+	if !vl {
+		t.Errorf("%s%s", assertPos(0), showIfFailed)
+	}
+	return vl
 }
 
 func False(t testing.TB, name string, act bool) bool {
