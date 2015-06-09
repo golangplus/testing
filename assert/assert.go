@@ -146,7 +146,7 @@ func Panic(t testing.TB, name string, f func()) bool {
 		f()
 		return
 	}() {
-		t.Errorf("%s%s does not panic as expected.", name)
+		t.Errorf("%s%s does not panic as expected.", assertPos(0), name)
 		return false
 	}
 

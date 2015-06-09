@@ -23,6 +23,11 @@ func TestFilePosition(t *testing.T) {
 	Equal(bt, "v", 1, 2)
 	line := 23 // the line number of the last line
 	Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", line))
+
+	b.Reset()
+	Panic(bt, "nonpanic", func() {})
+	line = 28 // the line number of the last line
+	Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: nonpanic does not panic as expected.\n", line))
 }
 
 func TestSuccess(t *testing.T) {
@@ -54,6 +59,7 @@ func ExampleFailed() {
 	Should(t, false, "failed")
 	False(t, "v", true)
 	StringEqual(t, "s", 1, "2")
+	Panic(t, "nonpanic", func() {})
 
 	// OUTPUT:
 	// v is expected to be "2", but got "1"
@@ -65,6 +71,7 @@ func ExampleFailed() {
 	// failed
 	// v unexpectedly got true
 	// s is expected to be "2", but got "1"
+	// nonpanic does not panic as expected.
 }
 
 func TestPanic(t *testing.T) {
