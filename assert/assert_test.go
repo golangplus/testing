@@ -28,6 +28,13 @@ func TestFilePosition(t *testing.T) {
 	Panic(bt, "nonpanic", func() {})
 	line = 28 // the line number of the last line
 	Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: nonpanic does not panic as expected.\n", line))
+
+	func(outLine int) {
+		b.Reset()
+		Equal(bt, "v", 1, 2)
+		line := 34 // the line number of the last line
+		Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", outLine, line))
+	}(37) // 37 is the line number of current line
 }
 
 func TestSuccess(t *testing.T) {

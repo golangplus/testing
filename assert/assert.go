@@ -14,11 +14,22 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 )
 
 // Set this to false to avoid include file position in logs.
 var IncludeFilePosition = true
+
+func isTestFuncName(name string) bool {
+	p := strings.LastIndex(name, ".")
+	if p < 0 {
+		return false
+	}
+
+	name = name[p+1:]
+	return strings.HasPrefix(name, "Test")
+}
 
 // Default: skip == 0
 func assertPos(skip int) string {
@@ -26,23 +37,38 @@ func assertPos(skip int) string {
 		return ""
 	}
 
-	_, file, line, ok := runtime.Caller(skip + 2)
-	if !ok {
-		return ""
+	res := ""
+	for i := 0; i < 5; i++ {
+		pc, file, line, ok := runtime.Caller(skip + 2)
+		if !ok {
+			return ""
+		}
+
+		res = fmt.Sprintf("%s:%d: ", path.Base(file), line) + res
+
+		if isTestFuncName(runtime.FuncForPC(pc).Name()) {
+			break
+		}
+
+		skip++
 	}
-	return fmt.Sprintf("%s:%d: ", path.Base(file), line)
+	return res
 }
 
 func Equal(t testing.TB, name string, act, exp interface{}) bool {
 	if act != exp {
 		expTp, actTp := reflect.ValueOf(exp).Type(), reflect.ValueOf(act).Type()
+		var expMsg, actMsg string
 		if expTp == actTp {
-			t.Errorf("%s%s is expected to be %q, but got %q", assertPos(0), name,
-				fmt.Sprint(exp), fmt.Sprint(act))
+			expMsg, actMsg = fmt.Sprintf("%q", fmt.Sprint(exp)), fmt.Sprintf("%q", fmt.Sprint(act))
 		} else {
-			t.Errorf("%s%s is expected to be %q(type %v), but got %q(type %v)",
-				assertPos(0), name, fmt.Sprint(exp), expTp, fmt.Sprint(act), actTp)
+			expMsg, actMsg = fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), expTp), fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), actTp)
 		}
+		msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(0), name, expMsg, actMsg)
+		if len(msg) >= 80 {
+			msg = fmt.Sprintf("%s%s is expected to be\n  %s\nbut got\n  %s", assertPos(0), name, expMsg, actMsg)
+		}
+		t.Error(msg)
 		return false
 	}
 	return true
@@ -116,15 +142,14 @@ func False(t testing.TB, name string, act bool) bool {
 func StringEqual(t testing.TB, name string, act, exp interface{}) bool {
 	actS, expS := fmt.Sprintf("%+v", act), fmt.Sprintf("%+v", exp)
 	if actS != expS {
-		if len(actS)+len(expS) < 70 {
-			t.Errorf("%s%s is expected to be %q, but got %q", assertPos(0), name,
+		msg := fmt.Sprintf("%s%s is expected to be %q, but got %q", assertPos(0), name,
+			fmt.Sprint(exp), fmt.Sprint(act))
+		if len(msg) >= 80 {
+			msg = fmt.Sprintf("%s%s is expected to be\n  %q\nbut got\n  %q", assertPos(0), name,
 				fmt.Sprint(exp), fmt.Sprint(act))
-			return false
-		} else {
-			t.Errorf("%s%s is expected to be\n%q\n, but got\n%q", assertPos(0), name,
-				fmt.Sprint(exp), fmt.Sprint(act))
-			return false
 		}
+		t.Error(msg)
+		return false
 	}
 	return true
 }
