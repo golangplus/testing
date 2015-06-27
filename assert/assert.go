@@ -62,7 +62,8 @@ func Equal(t testing.TB, name string, act, exp interface{}) bool {
 		if expTp == actTp {
 			expMsg, actMsg = fmt.Sprintf("%q", fmt.Sprint(exp)), fmt.Sprintf("%q", fmt.Sprint(act))
 		} else {
-			expMsg, actMsg = fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), expTp), fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), actTp)
+			expMsg = fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), expTp)
+			actMsg = fmt.Sprintf("%q(type %v)", fmt.Sprint(act), actTp)
 		}
 		msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(0), name, expMsg, actMsg)
 		if len(msg) >= 80 {

@@ -59,6 +59,7 @@ func ExampleFailed() {
 	}
 	Equal(t, "v", 1, 2)
 	Equal(t, "v", 1, "1")
+	Equal(t, "v", 1, "2")
 	ValueShould(t, "s", "\xff\xfe\xfd", utf8.ValidString, "is not valid UTF8")
 	ValueShould(t, "s", "abcd", len("abcd") <= 3, "has more than 3 bytes")
 	NotEqual(t, "v", 1, 1)
@@ -71,6 +72,7 @@ func ExampleFailed() {
 	// OUTPUT:
 	// v is expected to be "2", but got "1"
 	// v is expected to be "1"(type string), but got "1"(type int)
+	// v is expected to be "2"(type string), but got "1"(type int)
 	// s is not valid UTF8: "\xff\xfe\xfd"(type string)
 	// s has more than 3 bytes: "abcd"(type string)
 	// v is not expected to be "1"
