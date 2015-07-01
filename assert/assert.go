@@ -140,7 +140,83 @@ func False(t testing.TB, name string, act bool) bool {
 	return !act
 }
 
+func sliceToStrings(a reflect.Value) []string {
+	l := make([]string, a.Len())
+	for i := 0; i < a.Len(); i++ {
+		l[i] = fmt.Sprintf("%+v", a.Index(i).Interface())
+	}
+	return l
+}
+
+func stringSliceEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func linesEqual(t testing.TB, name string, act, exp reflect.Value) bool {
+	actS, expS := sliceToStrings(act), sliceToStrings(exp)
+	if stringSliceEqual(actS, expS) {
+		return true
+	}
+
+	title := fmt.Sprintf("%sUnexpected %s: ", assertPos(1), name)
+	if len(expS) == len(actS) {
+		title = fmt.Sprintf("%sboth %d lines", title, len(expS))
+	} else {
+		title = fmt.Sprintf("%sexp %d, act %d lines", title, len(expS), len(actS))
+	}
+	t.Error(title)
+	t.Log("  Difference(expected ---  actual +++)")
+
+	_, expMat, actMat := match(len(expS), len(actS), func(expI, actI int) int {
+		if expS[expI] == actS[actI] {
+			return 0
+		}
+		return 2
+	}, func(int) int {
+		return 1
+	}, func(int) int {
+		return 1
+	})
+	for i, j := 0, 0; i < len(expS) || j < len(actS); {
+		switch {
+		case j >= len(actS) || i < len(expS) && expMat[i] < 0:
+			t.Logf("    --- %3d: %q", i+1, expS[i])
+			i++
+		case i >= len(expS) || j < len(actS) && actMat[j] < 0:
+			t.Logf("    +++ %3d: %q", j+1, actS[j])
+			j++
+		default:
+			if expS[i] != actS[j] {
+				t.Logf("    --- %3d: %q", i+1, expS[i])
+				t.Logf("    +++ %3d: %q", j+1, actS[j])
+			} // else
+			i++
+			j++
+		}
+	}
+
+	return false
+}
+
+// StringEqual compares the string representation of the values.
+// If act and exp are both slices, they were matched by elements and the results are
+// presented in a diff style (if not totally equal).
 func StringEqual(t testing.TB, name string, act, exp interface{}) bool {
+	actV, expV := reflect.ValueOf(act), reflect.ValueOf(exp)
+	if actV.Kind() == reflect.Slice && expV.Kind() == reflect.Slice {
+		return linesEqual(t, name, actV, expV)
+	}
+
 	actS, expS := fmt.Sprintf("%+v", act), fmt.Sprintf("%+v", exp)
 	if actS != expS {
 		msg := fmt.Sprintf("%s%s is expected to be %q, but got %q", assertPos(0), name,

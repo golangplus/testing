@@ -67,6 +67,7 @@ func ExampleFailed() {
 	Should(t, false, "failed")
 	False(t, "v", true)
 	StringEqual(t, "s", 1, "2")
+	StringEqual(t, "s", []int{2, 3}, []string{"1", "2"})
 	Panic(t, "nonpanic", func() {})
 
 	// OUTPUT:
@@ -80,6 +81,10 @@ func ExampleFailed() {
 	// failed
 	// v unexpectedly got true
 	// s is expected to be "2", but got "1"
+	// Unexpected s: both 2 lines
+	//   Difference(expected ---  actual +++)
+	//     ---   1: "1"
+	//     +++   2: "3"
 	// nonpanic does not panic as expected.
 }
 
