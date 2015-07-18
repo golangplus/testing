@@ -14,6 +14,7 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -55,24 +56,163 @@ func assertPos(skip int) string {
 	return res
 }
 
+type sortInterfaceStruct struct {
+	LenF  int
+	LessF func(i, j int) bool
+	SwapF func(i, j int)
+}
+
+func (is sortInterfaceStruct) Len() int           { return is.LenF }
+func (is sortInterfaceStruct) Less(i, j int) bool { return is.LessF(i, j) }
+func (is sortInterfaceStruct) Swap(i, j int)      { is.SwapF(i, j) }
+
+func collectAndSortMapKeys(vl reflect.Value) (keys []reflect.Value, keyStrs []string) {
+	keys = vl.MapKeys()
+	keyStrs = make([]string, len(keys))
+	for i, key := range keys {
+		keyStrs[i] = fmt.Sprintf("%+v", key)
+	}
+	sort.Sort(sortInterfaceStruct{
+		LenF: len(keys),
+		LessF: func(i, j int) bool {
+			return keyStrs[i] < keyStrs[j]
+		},
+		SwapF: func(i, j int) {
+			keyStrs[i], keyStrs[j] = keyStrs[j], keyStrs[i]
+			keys[i], keys[j] = keys[j], keys[i]
+		},
+	})
+	return
+}
+
+func collectMapDiffKeys(act, exp reflect.Value, actKeys, expKeys []reflect.Value,
+	actKeyStrs, expKeyStrs []string) (extraKeys, diffKeys, missingKeys []reflect.Value) {
+	i, j := 0, 0
+	for i < len(expKeys) && j < len(actKeys) {
+		switch {
+		case expKeyStrs[i] < actKeyStrs[j]:
+			missingKeys = append(missingKeys, expKeys[i])
+			i++
+
+		case expKeyStrs[i] > actKeyStrs[j]:
+			extraKeys = append(extraKeys, actKeys[j])
+			j++
+
+		default:
+			expKeyStr, actKeyStr := expKeyStrs[i], actKeyStrs[j]
+			// Processing keys with equal string representation. (They are not necessarily equal).
+			for ; i < len(expKeys) && expKeyStrs[i] == actKeyStr; i++ {
+				expKey := expKeys[i]
+				actValue := act.MapIndex(expKey)
+				if !actValue.IsValid() {
+					// expKey does not exist in act.
+					missingKeys = append(missingKeys, expKey)
+					continue
+				}
+				expValue := exp.MapIndex(expKey)
+				if reflect.DeepEqual(expValue.Interface(), actValue.Interface()) {
+					continue
+				}
+				diffKeys = append(diffKeys, expKey)
+			}
+			for ; j < len(actKeys) && expKeyStr == actKeyStrs[j]; j++ {
+				actKey := actKeys[j]
+				expValue := exp.MapIndex(actKey)
+				if expValue.IsValid() {
+					// Should have handled in last loop
+					continue
+				}
+				extraKeys = append(extraKeys, actKey)
+			}
+		}
+	}
+	missingKeys = append(missingKeys, expKeys[i:]...)
+	extraKeys = append(extraKeys, actKeys[j:]...)
+	return
+}
+
+func mapValueToStr(val reflect.Value) string {
+	s := fmt.Sprintf("%+v", val.Interface())
+	if s == "{}" {
+		// If the value is an empty struct, the map is used as a set, not showing the value
+		return ""
+	}
+	return ": " + fmt.Sprintf("%q", s)
+}
+
+func mapDiff(skip int, t testing.TB, name string, act, exp reflect.Value) {
+	// Collect and sort map keys for exp and act.
+	actKeys, actKeyStrs := collectAndSortMapKeys(act)
+	expKeys, expKeyStrs := collectAndSortMapKeys(exp)
+
+	// Collect extra/diff/missing keys.
+	extraKeys, diffKeys, missingKeys :=
+		collectMapDiffKeys(act, exp, actKeys, expKeys, actKeyStrs, expKeyStrs)
+
+	// Output results
+	title := fmt.Sprintf("%sUnexpected %s: ", assertPos(skip), name)
+	if len(expKeys) == len(actKeys) {
+		title = fmt.Sprintf("%sboth %d entries", title, len(expKeys))
+	} else {
+		title = fmt.Sprintf("%sexp %d, act %d entries", title, len(expKeys), len(actKeys))
+	}
+	t.Error(title)
+	t.Log("  Difference(expected ---  actual +++)")
+
+	if len(missingKeys) > 0 {
+		for _, key := range missingKeys {
+			t.Logf("    --- %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(exp.MapIndex(key)))
+		}
+	}
+	if len(diffKeys) > 0 {
+		for _, key := range diffKeys {
+			t.Logf("    --- %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(exp.MapIndex(key)))
+			t.Logf("    +++ %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(act.MapIndex(key)))
+		}
+	}
+	if len(extraKeys) > 0 {
+		for _, key := range extraKeys {
+			t.Logf("    +++ %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(act.MapIndex(key)))
+		}
+	}
+}
+
+func sameTypeDiff(skip int, t testing.TB, name string, act, exp reflect.Value) {
+	switch exp.Kind() {
+	case reflect.Map:
+		mapDiff(skip+1, t, name, act, exp)
+		return
+	case reflect.Slice:
+	}
+
+	expMsg := fmt.Sprintf("%q", fmt.Sprint(exp.Interface()))
+	actMsg := fmt.Sprintf("%q", fmt.Sprint(act.Interface()))
+	msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(skip), name, expMsg, actMsg)
+	if len(msg) >= 80 {
+		msg = fmt.Sprintf("%s%s is expected to be\n  %s\nbut got\n  %s", assertPos(skip), name, expMsg, actMsg)
+	}
+	t.Error(msg)
+}
+
 func Equal(t testing.TB, name string, act, exp interface{}) bool {
-	if act != exp {
-		expTp, actTp := reflect.ValueOf(exp).Type(), reflect.ValueOf(act).Type()
-		var expMsg, actMsg string
-		if expTp == actTp {
-			expMsg, actMsg = fmt.Sprintf("%q", fmt.Sprint(exp)), fmt.Sprintf("%q", fmt.Sprint(act))
-		} else {
-			expMsg = fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), expTp)
-			actMsg = fmt.Sprintf("%q(type %v)", fmt.Sprint(act), actTp)
-		}
-		msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(0), name, expMsg, actMsg)
-		if len(msg) >= 80 {
-			msg = fmt.Sprintf("%s%s is expected to be\n  %s\nbut got\n  %s", assertPos(0), name, expMsg, actMsg)
-		}
-		t.Error(msg)
+	if reflect.DeepEqual(exp, act) {
+		return true
+	}
+	expVl, actVl := reflect.ValueOf(exp), reflect.ValueOf(act)
+
+	if expVl.Type() == actVl.Type() {
+		sameTypeDiff(1, t, name, actVl, expVl)
 		return false
 	}
-	return true
+
+	expMsg := fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), expVl.Type())
+	actMsg := fmt.Sprintf("%q(type %v)", fmt.Sprint(act), actVl.Type())
+	msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(0), name, expMsg, actMsg)
+	if len(msg) >= 80 {
+		msg = fmt.Sprintf("%s%s is expected to be\n  %s\nbut got\n  %s", assertPos(0), name, expMsg, actMsg)
+	}
+	t.Error(msg)
+	return false
 }
 
 // @param expToFunc could be a func with a single input value and a bool return, or a bool value directly.
@@ -162,13 +302,13 @@ func stringSliceEqual(a, b []string) bool {
 	return true
 }
 
-func linesEqual(t testing.TB, name string, act, exp reflect.Value) bool {
+func linesEqual(skip int, t testing.TB, name string, act, exp reflect.Value) bool {
 	actS, expS := sliceToStrings(act), sliceToStrings(exp)
 	if stringSliceEqual(actS, expS) {
 		return true
 	}
 
-	title := fmt.Sprintf("%sUnexpected %s: ", assertPos(1), name)
+	title := fmt.Sprintf("%sUnexpected %s: ", assertPos(skip), name)
 	if len(expS) == len(actS) {
 		title = fmt.Sprintf("%sboth %d lines", title, len(expS))
 	} else {
@@ -214,7 +354,7 @@ func linesEqual(t testing.TB, name string, act, exp reflect.Value) bool {
 func StringEqual(t testing.TB, name string, act, exp interface{}) bool {
 	actV, expV := reflect.ValueOf(act), reflect.ValueOf(exp)
 	if actV.Kind() == reflect.Slice && expV.Kind() == reflect.Slice {
-		return linesEqual(t, name, actV, expV)
+		return linesEqual(0, t, name, actV, expV)
 	}
 
 	actS, expS := fmt.Sprintf("%+v", act), fmt.Sprintf("%+v", exp)
