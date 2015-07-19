@@ -53,22 +53,18 @@ func TestSuccess(t *testing.T) {
 }
 
 func ExampleEqual() {
-	// Turn off file position because it is hard to check.
+	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
+	// normal testing instead.
 	IncludeFilePosition = false
-
-	t := &testingp.WriterTB{
-		Writer: os.Stdout,
-	}
+	t := &testingp.WriterTB{Writer: os.Stdout}
 
 	Equal(t, "v", 1, 2)
 	Equal(t, "v", 1, "1")
-	Equal(t, "v", 1, "2")
 	Equal(t, "m", map[string]int{"Extra": 2, "Modified": 4}, map[string]int{"Missing": 1, "Modified": 5})
 
 	// OUTPUT:
 	// v is expected to be "2", but got "1"
 	// v is expected to be "1"(type string), but got "1"(type int)
-	// v is expected to be "2"(type string), but got "1"(type int)
 	// Unexpected m: both 2 entries
 	//   Difference(expected ---  actual +++)
 	//     --- "Missing": "1"
@@ -78,12 +74,10 @@ func ExampleEqual() {
 }
 
 func ExampleValueShould() {
-	// Turn off file position because it is hard to check.
+	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
+	// normal testing instead.
 	IncludeFilePosition = false
-
-	t := &testingp.WriterTB{
-		Writer: os.Stdout,
-	}
+	t := &testingp.WriterTB{Writer: os.Stdout}
 
 	ValueShould(t, "s", "\xff\xfe\xfd", utf8.ValidString, "is not valid UTF8")
 	ValueShould(t, "s", "abcd", len("abcd") <= 3, "has more than 3 bytes")
@@ -94,40 +88,39 @@ func ExampleValueShould() {
 }
 
 func ExampleStringEqual() {
-	// Turn off file position because it is hard to check.
+	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
+	// normal testing instead.
 	IncludeFilePosition = false
+	t := &testingp.WriterTB{Writer: os.Stdout}
 
-	t := &testingp.WriterTB{
-		Writer: os.Stdout,
-	}
-
-	StringEqual(t, "s", 1, "2")
 	StringEqual(t, "s", []int{2, 3}, []string{"1", "2"})
 
 	// OUTPUT:
-	// s is expected to be "2", but got "1"
 	// Unexpected s: both 2 lines
 	//   Difference(expected ---  actual +++)
 	//     ---   1: "1"
 	//     +++   2: "3"
 }
 
-func ExampleFailed() {
-	// Turn off file position because it is hard to check.
+func ExampleFailureTesting() {
+	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
+	// normal testing instead.
 	IncludeFilePosition = false
-
-	t := &testingp.WriterTB{
-		Writer: os.Stdout,
-	}
+	t := &testingp.WriterTB{Writer: os.Stdout}
+	
+	Equal(t, "v", 1, "2")
 	NotEqual(t, "v", 1, 1)
 	True(t, "v", false)
 	Should(t, false, "failed")
+	StringEqual(t, "s", 1, "2")
 	False(t, "v", true)
 	Panic(t, "nonpanic", func() {})
 
 	// OUTPUT:
+	// v is expected to be "2"(type string), but got "1"(type int)
 	// v is not expected to be "1"
 	// v unexpectedly got false
+	// s is expected to be "2", but got "1"
 	// failed
 	// v unexpectedly got true
 	// nonpanic does not panic as expected.
