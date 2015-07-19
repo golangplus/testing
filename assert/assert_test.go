@@ -35,9 +35,13 @@ func TestFilePosition(t *testing.T) {
 	}(35) // 37 is the line number of current line
 
 	b.Reset()
-	StringEqual(bt, "s", "1", 2)
+	StringEqual(bt, "s", []int{1}, []int{2})
 	line = 38 // the line number of the last line
-	Equal(t, "log", string(b), fmt.Sprintf("assert_test.go:%d: s is expected to be \"2\", but got \"1\"\n", line))
+	StringEqual(t, "log", string(b), fmt.Sprintf(`assert_test.go:%d: Unexpected s: both 1 lines
+  Difference(expected ---  actual +++)
+    ---   1: "2"
+    +++   1: "1"
+`, line))
 }
 
 func TestSuccess(t *testing.T) {
@@ -98,12 +102,23 @@ func ExampleStringEqual() {
 	t := &testingp.WriterTB{Writer: os.Stdout}
 
 	StringEqual(t, "s", []int{2, 3}, []string{"1", "2"})
+	StringEqual(t, "s", `
+Extra
+Modified act`, `
+Modified exp
+Missing`)
 
 	// OUTPUT:
 	// Unexpected s: both 2 lines
 	//   Difference(expected ---  actual +++)
 	//     ---   1: "1"
 	//     +++   2: "3"
+	// Unexpected s: both 3 lines
+	//   Difference(expected ---  actual +++)
+	//     ---   2: "Modified exp"
+	//     ---   3: "Missing"
+	//     +++   2: "Extra"
+	//     +++   3: "Modified act"
 }
 
 func TestFailures(t *testing.T) {

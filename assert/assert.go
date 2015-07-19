@@ -354,21 +354,28 @@ func linesEqual(skip int, t testing.TB, name string, act, exp reflect.Value) boo
 func StringEqual(t testing.TB, name string, act, exp interface{}) bool {
 	actV, expV := reflect.ValueOf(act), reflect.ValueOf(exp)
 	if actV.Kind() == reflect.Slice && expV.Kind() == reflect.Slice {
-		return linesEqual(0, t, name, actV, expV)
+		return linesEqual(1, t, name, actV, expV)
 	}
 
 	actS, expS := fmt.Sprintf("%+v", act), fmt.Sprintf("%+v", exp)
-	if actS != expS {
-		msg := fmt.Sprintf("%s%s is expected to be %q, but got %q", assertPos(0), name,
-			fmt.Sprint(exp), fmt.Sprint(act))
-		if len(msg) >= 80 {
-			msg = fmt.Sprintf("%s%s is expected to be\n  %q\nbut got\n  %q", assertPos(0), name,
-				fmt.Sprint(exp), fmt.Sprint(act))
-		}
-		t.Error(msg)
-		return false
+	if actS == expS {
+		return true
 	}
-	return true
+
+	if strings.ContainsRune(actS, '\n') || strings.ContainsRune(expS, '\n') {
+		return linesEqual(1, t, name,
+			reflect.ValueOf(strings.Split(actS, "\n")),
+			reflect.ValueOf(strings.Split(expS, "\n")))
+	}
+
+	msg := fmt.Sprintf("%s%s is expected to be %q, but got %q", assertPos(0), name,
+		fmt.Sprint(exp), fmt.Sprint(act))
+	if len(msg) >= 80 {
+		msg = fmt.Sprintf("%s%s is expected to be\n  %q\nbut got\n  %q", assertPos(0), name,
+			fmt.Sprint(exp), fmt.Sprint(act))
+	}
+	t.Error(msg)
+	return false
 }
 
 func NoError(t testing.TB, err error) bool {
