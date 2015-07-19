@@ -52,26 +52,18 @@ func TestSuccess(t *testing.T) {
 	True(t, "return value", StringEqual(t, "string", 1, "1"))
 }
 
-func ExampleFailed() {
+func ExampleEqual() {
 	// Turn off file position because it is hard to check.
 	IncludeFilePosition = false
 
 	t := &testingp.WriterTB{
 		Writer: os.Stdout,
 	}
+
 	Equal(t, "v", 1, 2)
 	Equal(t, "v", 1, "1")
 	Equal(t, "v", 1, "2")
-	Equal(t, "m", map[int]int{1: 2, 3: 4}, map[int]int{2: 1, 3: 5})
-	ValueShould(t, "s", "\xff\xfe\xfd", utf8.ValidString, "is not valid UTF8")
-	ValueShould(t, "s", "abcd", len("abcd") <= 3, "has more than 3 bytes")
-	NotEqual(t, "v", 1, 1)
-	True(t, "v", false)
-	Should(t, false, "failed")
-	False(t, "v", true)
-	StringEqual(t, "s", 1, "2")
-	StringEqual(t, "s", []int{2, 3}, []string{"1", "2"})
-	Panic(t, "nonpanic", func() {})
+	Equal(t, "m", map[string]int{"Extra": 2, "Modified": 4}, map[string]int{"Missing": 1, "Modified": 5})
 
 	// OUTPUT:
 	// v is expected to be "2", but got "1"
@@ -79,21 +71,65 @@ func ExampleFailed() {
 	// v is expected to be "2"(type string), but got "1"(type int)
 	// Unexpected m: both 2 entries
 	//   Difference(expected ---  actual +++)
-	//     --- "2": "1"
-	//     --- "3": "5"
-	//     +++ "3": "4"
-	//     +++ "1": "2"
+	//     --- "Missing": "1"
+	//     --- "Modified": "5"
+	//     +++ "Modified": "4"
+	//     +++ "Extra": "2"
+}
+
+func ExampleValueShould() {
+	// Turn off file position because it is hard to check.
+	IncludeFilePosition = false
+
+	t := &testingp.WriterTB{
+		Writer: os.Stdout,
+	}
+
+	ValueShould(t, "s", "\xff\xfe\xfd", utf8.ValidString, "is not valid UTF8")
+	ValueShould(t, "s", "abcd", len("abcd") <= 3, "has more than 3 bytes")
+
+	// OUTPUT:
 	// s is not valid UTF8: "\xff\xfe\xfd"(type string)
 	// s has more than 3 bytes: "abcd"(type string)
-	// v is not expected to be "1"
-	// v unexpectedly got false
-	// failed
-	// v unexpectedly got true
+}
+
+func ExampleStringEqual() {
+	// Turn off file position because it is hard to check.
+	IncludeFilePosition = false
+
+	t := &testingp.WriterTB{
+		Writer: os.Stdout,
+	}
+
+	StringEqual(t, "s", 1, "2")
+	StringEqual(t, "s", []int{2, 3}, []string{"1", "2"})
+
+	// OUTPUT:
 	// s is expected to be "2", but got "1"
 	// Unexpected s: both 2 lines
 	//   Difference(expected ---  actual +++)
 	//     ---   1: "1"
 	//     +++   2: "3"
+}
+
+func ExampleFailed() {
+	// Turn off file position because it is hard to check.
+	IncludeFilePosition = false
+
+	t := &testingp.WriterTB{
+		Writer: os.Stdout,
+	}
+	NotEqual(t, "v", 1, 1)
+	True(t, "v", false)
+	Should(t, false, "failed")
+	False(t, "v", true)
+	Panic(t, "nonpanic", func() {})
+
+	// OUTPUT:
+	// v is not expected to be "1"
+	// v unexpectedly got false
+	// failed
+	// v unexpectedly got true
 	// nonpanic does not panic as expected.
 }
 
