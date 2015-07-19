@@ -53,14 +53,15 @@ func TestSuccess(t *testing.T) {
 }
 
 func ExampleEqual() {
-	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
-	// normal testing instead.
+	// The following two lines are for test/example of assert package itself. Use
+	// *testing.T as t in normal testing instead.
 	IncludeFilePosition = false
 	t := &testingp.WriterTB{Writer: os.Stdout}
 
 	Equal(t, "v", 1, 2)
 	Equal(t, "v", 1, "1")
-	Equal(t, "m", map[string]int{"Extra": 2, "Modified": 4}, map[string]int{"Missing": 1, "Modified": 5})
+	Equal(t, "m", map[string]int{"Extra": 2, "Modified": 4},
+		map[string]int{"Missing": 1, "Modified": 5})
 
 	// OUTPUT:
 	// v is expected to be "2", but got "1"
@@ -74,8 +75,8 @@ func ExampleEqual() {
 }
 
 func ExampleValueShould() {
-	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
-	// normal testing instead.
+	// The following two lines are for test/example of assert package itself. Use
+	// *testing.T as t in normal testing instead.
 	IncludeFilePosition = false
 	t := &testingp.WriterTB{Writer: os.Stdout}
 
@@ -88,8 +89,8 @@ func ExampleValueShould() {
 }
 
 func ExampleStringEqual() {
-	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
-	// normal testing instead.
+	// The following two lines are for test/example of assert package itself. Use
+	// *testing.T as t in normal testing instead.
 	IncludeFilePosition = false
 	t := &testingp.WriterTB{Writer: os.Stdout}
 
@@ -103,11 +104,11 @@ func ExampleStringEqual() {
 }
 
 func ExampleFailureTesting() {
-	// The following two lines are for test/example of assert package itself. Use *testing.T as t in
-	// normal testing instead.
+	// The following two lines are for test/example of assert package itself. Use
+	// *testing.T as t in normal testing instead.
 	IncludeFilePosition = false
 	t := &testingp.WriterTB{Writer: os.Stdout}
-	
+
 	Equal(t, "v", 1, "2")
 	NotEqual(t, "v", 1, 1)
 	True(t, "v", false)
@@ -120,8 +121,8 @@ func ExampleFailureTesting() {
 	// v is expected to be "2"(type string), but got "1"(type int)
 	// v is not expected to be "1"
 	// v unexpectedly got false
-	// s is expected to be "2", but got "1"
 	// failed
+	// s is expected to be "2", but got "1"
 	// v unexpectedly got true
 	// nonpanic does not panic as expected.
 }
