@@ -5,36 +5,39 @@
 package assert
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"testing"
 	"unicode/utf8"
 
+	"github.com/golangplus/bytes"
 	"github.com/golangplus/testing"
 )
 
 func TestFilePosition(t *testing.T) {
-	var b bytes.Buffer
-	bt := &testingp.WriterTB{
-		Writer: &b,
-	}
+	var b bytesp.ByteSlice
+	bt := &testingp.WriterTB{Writer: &b}
 
 	Equal(bt, "v", 1, 2)
-	line := 23 // the line number of the last line
-	Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", line))
+	line := 21 // the line number of the last line
+	Equal(t, "log", string(b), fmt.Sprintf("assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", line))
 
 	b.Reset()
 	Panic(bt, "nonpanic", func() {})
-	line = 28 // the line number of the last line
-	Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: nonpanic does not panic as expected.\n", line))
+	line = 26 // the line number of the last line
+	Equal(t, "log", string(b), fmt.Sprintf("assert_test.go:%d: nonpanic does not panic as expected.\n", line))
 
 	func(outLine int) {
 		b.Reset()
 		Equal(bt, "v", 1, 2)
-		line := 34 // the line number of the last line
-		Equal(t, "log", b.String(), fmt.Sprintf("assert_test.go:%d: assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", outLine, line))
-	}(37) // 37 is the line number of current line
+		line := 32 // the line number of the last line
+		Equal(t, "log", string(b), fmt.Sprintf("assert_test.go:%d: assert_test.go:%d: v is expected to be \"2\", but got \"1\"\n", outLine, line))
+	}(35) // 37 is the line number of current line
+
+	b.Reset()
+	StringEqual(bt, "s", "1", 2)
+	line = 38 // the line number of the last line
+	Equal(t, "log", string(b), fmt.Sprintf("assert_test.go:%d: s is expected to be \"2\", but got \"1\"\n", line))
 }
 
 func TestSuccess(t *testing.T) {
@@ -103,28 +106,28 @@ func ExampleStringEqual() {
 	//     +++   2: "3"
 }
 
-func ExampleFailureTesting() {
-	// The following two lines are for test/example of assert package itself. Use
-	// *testing.T as t in normal testing instead.
+func TestFailures(t *testing.T) {
 	IncludeFilePosition = false
-	t := &testingp.WriterTB{Writer: os.Stdout}
+	var b bytesp.ByteSlice
+	bt := &testingp.WriterTB{Writer: &b}
 
-	Equal(t, "v", 1, "2")
-	NotEqual(t, "v", 1, 1)
-	True(t, "v", false)
-	Should(t, false, "failed")
-	StringEqual(t, "s", 1, "2")
-	False(t, "v", true)
-	Panic(t, "nonpanic", func() {})
+	Equal(bt, "v", 1, "2")
+	NotEqual(bt, "v", 1, 1)
+	True(bt, "v", false)
+	Should(bt, false, "failed")
+	StringEqual(bt, "s", 1, "2")
+	False(bt, "v", true)
+	Panic(bt, "nonpanic", func() {})
 
-	// OUTPUT:
-	// v is expected to be "2"(type string), but got "1"(type int)
-	// v is not expected to be "1"
-	// v unexpectedly got false
-	// failed
-	// s is expected to be "2", but got "1"
-	// v unexpectedly got true
-	// nonpanic does not panic as expected.
+	StringEqual(t, "output", "\n"+string(b), `
+v is expected to be "2"(type string), but got "1"(type int)
+v is not expected to be "1"
+v unexpectedly got false
+failed
+s is expected to be "2", but got "1"
+v unexpectedly got true
+nonpanic does not panic as expected.
+`)
 }
 
 func TestPanic(t *testing.T) {
