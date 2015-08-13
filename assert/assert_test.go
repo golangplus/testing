@@ -15,7 +15,7 @@ import (
 )
 
 func TestFilePosition(t *testing.T) {
-	var b bytesp.ByteSlice
+	var b bytesp.Slice
 	bt := &testingp.WriterTB{Writer: &b}
 
 	Equal(bt, "v", 1, 2)
@@ -123,7 +123,7 @@ Missing`)
 
 func TestFailures(t *testing.T) {
 	IncludeFilePosition = false
-	var b bytesp.ByteSlice
+	var b bytesp.Slice
 	bt := &testingp.WriterTB{Writer: &b}
 
 	Equal(bt, "v", 1, "2")
