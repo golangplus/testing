@@ -185,13 +185,20 @@ func sameTypeDiff(skip int, t testing.TB, name string, act, exp reflect.Value) {
 	case reflect.Slice:
 	}
 
-	expMsg := fmt.Sprintf("%q", fmt.Sprint(exp.Interface()))
-	actMsg := fmt.Sprintf("%q", fmt.Sprint(act.Interface()))
+	expMsg := fmt.Sprintf("%q", fmt.Sprintf("%+v", exp.Interface()))
+	actMsg := fmt.Sprintf("%q", fmt.Sprintf("%+v", act.Interface()))
 	msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(skip), name, expMsg, actMsg)
 	if len(msg) >= 80 {
 		msg = fmt.Sprintf("%s%s is expected to be\n  %s\nbut got\n  %s", assertPos(skip), name, expMsg, actMsg)
 	}
 	t.Error(msg)
+}
+
+func safeValueType(vl reflect.Value) reflect.Type {
+	if !vl.IsValid() {
+		return nil
+	}
+	return vl.Type()
 }
 
 func Equal(t testing.TB, name string, act, exp interface{}) bool {
@@ -200,13 +207,13 @@ func Equal(t testing.TB, name string, act, exp interface{}) bool {
 	}
 	expVl, actVl := reflect.ValueOf(exp), reflect.ValueOf(act)
 
-	if expVl.Type() == actVl.Type() {
+	if safeValueType(expVl) == safeValueType(actVl) {
 		sameTypeDiff(1, t, name, actVl, expVl)
 		return false
 	}
 
-	expMsg := fmt.Sprintf("%q(type %v)", fmt.Sprint(exp), expVl.Type())
-	actMsg := fmt.Sprintf("%q(type %v)", fmt.Sprint(act), actVl.Type())
+	expMsg := fmt.Sprintf("%q(type %v)", fmt.Sprintf("%+v", exp), safeValueType(expVl))
+	actMsg := fmt.Sprintf("%q(type %v)", fmt.Sprintf("%+v", act), safeValueType(actVl))
 	msg := fmt.Sprintf("%s%s is expected to be %s, but got %s", assertPos(0), name, expMsg, actMsg)
 	if len(msg) >= 80 {
 		msg = fmt.Sprintf("%s%s is expected to be\n  %s\nbut got\n  %s", assertPos(0), name, expMsg, actMsg)
@@ -271,6 +278,12 @@ func Should(t testing.TB, vl bool, showIfFailed string) bool {
 		t.Errorf("%s%s", assertPos(0), showIfFailed)
 	}
 	return vl
+}
+
+func ShouldOrDie(t testing.TB, vl bool, showIfFailed string) {
+	if !vl {
+		t.Fatalf("%s%s", assertPos(0), showIfFailed)
+	}
 }
 
 func False(t testing.TB, name string, act bool) bool {
@@ -381,6 +394,20 @@ func StringEqual(t testing.TB, name string, act, exp interface{}) bool {
 func NoError(t testing.TB, err error) bool {
 	if err != nil {
 		t.Errorf("%s%v", assertPos(0), err)
+		return false
+	}
+	return true
+}
+
+func NoErrorOrDie(t testing.TB, err error) {
+	if err != nil {
+		t.Fatalf("%s%v", assertPos(0), err)
+	}
+}
+
+func Error(t testing.TB, err error) bool {
+	if err == nil {
+		t.Error("Expecting error but nil got!")
 		return false
 	}
 	return true
