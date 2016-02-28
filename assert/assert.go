@@ -156,25 +156,26 @@ func mapDiff(skip int, t testing.TB, name string, act, exp reflect.Value) {
 	} else {
 		title = fmt.Sprintf("%sexp %d, act %d entries", title, len(expKeys), len(actKeys))
 	}
-	t.Error(title)
-	t.Log("  Difference(expected ---  actual +++)")
+	msg := title
+	msg += "\n  Difference(expected ---  actual +++)"
 
 	if len(missingKeys) > 0 {
 		for _, key := range missingKeys {
-			t.Logf("    --- %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(exp.MapIndex(key)))
+			msg += fmt.Sprintf("\n    --- %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(exp.MapIndex(key)))
 		}
 	}
 	if len(diffKeys) > 0 {
 		for _, key := range diffKeys {
-			t.Logf("    --- %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(exp.MapIndex(key)))
-			t.Logf("    +++ %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(act.MapIndex(key)))
+			msg += fmt.Sprintf("\n    --- %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(exp.MapIndex(key)))
+			msg += fmt.Sprintf("\n    +++ %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(act.MapIndex(key)))
 		}
 	}
 	if len(extraKeys) > 0 {
 		for _, key := range extraKeys {
-			t.Logf("    +++ %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(act.MapIndex(key)))
+			msg += fmt.Sprintf("\n    +++ %q%s", fmt.Sprintf("%+v", key.Interface()), mapValueToStr(act.MapIndex(key)))
 		}
 	}
+	t.Error(msg)
 }
 
 func sameTypeDiff(skip int, t testing.TB, name string, act, exp reflect.Value) {
