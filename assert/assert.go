@@ -173,7 +173,7 @@ func deepValueDiff(name string, act, exp reflect.Value) (message string, equal b
 			}
 		}
 		for i, n := 0, act.NumField(); i < n; i++ {
-			if reflect.DeepEqual(act.Interface(), exp.Interface()) {
+			if act.Type().Field(i).PkgPath != "" {
 				continue
 			}
 			if mi, e := deepValueDiff(fmt.Sprintf("%s.%s", name, act.Type().Field(i).Name), act.Field(i), exp.Field(i)); !e {

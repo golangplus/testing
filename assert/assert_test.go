@@ -195,6 +195,7 @@ func TestDeepValueDiff_NotEqual(t *testing.T) {
 	shouldNotEqual(map[string]int{"A": 1}, map[string]int{"A": 2})
 	shouldNotEqual(map[string]int{}, map[string]int{"B": 2})
 	shouldNotEqual(func() {}, func() {})
+	shouldNotEqual(time.Now(), time.Now().Add(time.Hour))
 	var a interface{}
 	var b interface{} = 123
 	var c interface{} = 456
