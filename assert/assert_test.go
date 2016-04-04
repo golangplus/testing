@@ -208,8 +208,8 @@ func TestDeepValueDiff_Message(t *testing.T) {
 		V int
 		A []string
 	}
-	shouldNotEqualWithMessage := func(a, b interface{}, msg string) {
-		m, eq := deepValueDiff("v", reflect.ValueOf(a), reflect.ValueOf(b))
+	shouldNotEqualWithMessage := func(act, exp interface{}, msg string) {
+		m, eq := deepValueDiff("v", reflect.ValueOf(act), reflect.ValueOf(exp))
 		False(t, "eq", eq)
 		StringEqual(t, "m", m, msg)
 	}
@@ -229,4 +229,5 @@ func TestDeepValueDiff_Message(t *testing.T) {
 	shouldNotEqualWithMessage(map[string]S{"A": S{A: []string{"1"}}}, map[string]S{"B": S{A: []string{"2"}}}, `v is unexpected:
   extra "A" -> {V:0 A:[1]}
   missing "B" -> {V:0 A:[2]}`)
+	shouldNotEqualWithMessage((*S)(nil), &S{}, `v is expected to be &{V:0 A:[]}, but got <nil>`)
 }

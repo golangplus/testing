@@ -158,6 +158,9 @@ func deepValueDiff(name string, act, exp reflect.Value) (message string, equal b
 		if act.Pointer() == exp.Pointer() {
 			return "", true
 		}
+		if act.IsNil() != exp.IsNil() {
+			return diffMessage(name, act, exp), false
+		}
 		return deepValueDiff(name, act.Elem(), exp.Elem())
 	case reflect.Struct:
 		m, eq := []string(nil), true
