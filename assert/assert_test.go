@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"github.com/golangplus/bytes"
@@ -170,6 +171,7 @@ func TestDeepValueDiff_Equal(t *testing.T) {
 	selfEqual(map[string]int{"A": 1})
 	var c interface{}
 	selfEqual(&c)
+	selfEqual(time.Now())
 }
 
 func TestDeepValueDiff_NotEqual(t *testing.T) {

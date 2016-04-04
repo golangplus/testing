@@ -162,6 +162,20 @@ func deepValueDiff(name string, act, exp reflect.Value) (message string, equal b
 	case reflect.Struct:
 		m, eq := []string(nil), true
 		for i, n := 0, act.NumField(); i < n; i++ {
+			if act.Type().Field(i).PkgPath != "" {
+				// Contains unexported fields, use reflect.DeepEqual
+				if reflect.DeepEqual(act.Interface(), exp.Interface()) {
+					return "", true
+				}
+				eq = false
+				// Try export difference of exported fields
+				break
+			}
+		}
+		for i, n := 0, act.NumField(); i < n; i++ {
+			if reflect.DeepEqual(act.Interface(), exp.Interface()) {
+				continue
+			}
 			if mi, e := deepValueDiff(fmt.Sprintf("%s.%s", name, act.Type().Field(i).Name), act.Field(i), exp.Field(i)); !e {
 				m = append(m, strings.Split(mi, "\n")...)
 				eq = false
@@ -209,7 +223,7 @@ func deepValueDiff(name string, act, exp reflect.Value) (message string, equal b
 		// Can't do better than this:
 		return diffMessage(name, act, exp), false
 	default:
-		if reflect.DeepEqual(act.Interface(), exp.Interface()) {
+		if act.Interface() == exp.Interface() {
 			return "", true
 		}
 		return diffMessage(name, act, exp), false
