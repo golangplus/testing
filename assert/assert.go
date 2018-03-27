@@ -197,14 +197,21 @@ func deepValueDiff(name string, act, exp reflect.Value) (message string, equal b
 			actV := act.MapIndex(k)
 			expV := exp.MapIndex(k)
 			if !expV.IsValid() {
-				eq = false
-				m = append(m, fmt.Sprintf("extra %s -> %s", valueMessage(k, false), valueMessage(actV, false)))
 				continue
 			}
 			if mk, e := deepValueDiff(fmt.Sprintf("%s[%v]", name, valueMessage(k, false)), actV, expV); !e {
 				eq = false
 				m = append(m, strings.Split(mk, "\n")...)
 			}
+		}
+		for _, k := range act.MapKeys() {
+			actV := act.MapIndex(k)
+			expV := exp.MapIndex(k)
+			if expV.IsValid() {
+				continue
+			}
+			eq = false
+			m = append(m, fmt.Sprintf("extra %s -> %s", valueMessage(k, false), valueMessage(actV, false)))
 		}
 		for _, k := range exp.MapKeys() {
 			actV := act.MapIndex(k)

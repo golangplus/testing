@@ -49,8 +49,8 @@ func ExampleEqual() {
 	// v is expected to be 2, but got 1
 	// v is expected to be "1"(type=string), but got 1(type=int)
 	// m is unexpected:
-	//   extra "Extra" -> 2
 	//   m["Modified"] is expected to be 5, but got 4
+	//   extra "Extra" -> 2
 	//   missing "Missing" -> 1
 }
 
